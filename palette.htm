@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Line</title>
+		<script type="text/javascript" src="jquery-1.8.3.js" ></script>
+		<style> 
+      body{ 
+        background-color: #fff;
+      }
+		</style>
+	</head>
+ 
+	<body onload="init();">
+		<canvas id="canvas"></canvas>
+		<script type="text/javascript" >
+
+		function clearcanvas1(){
+      var canvas = document.getElementById('canvas'),
+      ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+		// cache a reference to the canvas element & its context
+    // because they are used often
+
+    var canvas=$('#canvas')[0];
+    var context = canvas.getContext('2d');
+
+    //full-screen
+    $( '#canvas' )[ 0 ].width = $( document ).width();
+    $( '#canvas' )[ 0 ].height = $( document ).height();
+
+    // style lines with rounded end-caps & rounded joins
+    // this rounds the beginning & end of each line. 
+    // that rounding helps visually merge one line into the next line.
+    context.lineJoin='round';
+    context.lineCap='round';
+
+    var mouseX = undefined;
+    var mouseY = undefined;
+    var mouseIsDown = false;
+    var swapped = false;
+
+    var PI2 = Math.PI*2;
+    var speed = -1000;
+    (function(){ Math.clamp=function( a,b,c ){return Math.max(b,Math.min(c,a));}})();
+    var curColor = 'hsl( 10.0, 100%, 60% )';
+
+    onMouseDown = function( event ){
+      // tell the browser we're handling this event
+      event.preventDefault();
+      event.stopPropagation();
+      mouseIsDown = true;
+    }
+
+    onMouseMove = function( event ){
+      // tell the browser we're handling this event
+      event.preventDefault();
+      event.stopPropagation();
+
+      var previousMouseX = mouseX;
+      var previousMouseY = mouseY;
+
+      mouseX = event.pageX;
+      mouseY = event.pageY;
+
+      var dx = Math.abs( mouseX - previousMouseX );
+      var dy = Math.abs( mouseY - previousMouseY );
+
+
+      var speed = Math.sqrt( dx * dx + dy * dy );
+
+      // limit the min/max width of the line
+      speed=Math.clamp(speed,5,200);
+
+      var angle = 2 * Math.PI * Math.acos( dx / ( speed + 0.00001 ) );
+
+      var newColor = curColor;
+      if( angle < Math.PI ){
+          if( swapped == false ){
+            var hue = 360 * Math.random(); 
+            newColor = 'hsl( ' + hue + ', 100%, 60% )';
+            swapped = true;
+          }
+      }
+      else{
+        swapped = false;
+      }
+
+      var gradient = context.createLinearGradient( previousMouseX, previousMouseY, mouseX, mouseY );
+      gradient.addColorStop( 0, curColor );
+      gradient.addColorStop( 1, newColor );
+
+      if( mouseIsDown ){
+        var difference = speed - context.lineWidth;
+        if( difference > 10 ){
+          difference = 10;
+        }
+        if( difference < -10 ){
+          difference = -10;
+        }
+        context.lineWidth += difference;
+
+        context.strokeStyle = gradient;
+        context.beginPath();
+        context.moveTo( previousMouseX, previousMouseY );
+        context.lineTo( mouseX, mouseY );
+        context.stroke();
+      }
+
+      curColor = newColor;
+    }
+    //drawing only is the mouse is down
+    onMouseUp = function( event ){
+      // tell the browser we're handling this event
+      event.preventDefault();
+      event.stopPropagation();
+
+      mouseIsDown = false;
+    }
+
+    onKeyDown = function( event ){
+      if( event.keyCode == 32 ){
+        context.clearRect( 0, 0, context.canvas.width, context.canvas.height );
+      }
+    }
+
+    $( '#canvas' ).on( 'mousedown', onMouseDown );
+    $( '#canvas' ).on( 'mousemove', onMouseMove );
+    $( '#canvas' ).on( 'mouseup', onMouseUp );
+    $( 'body' ).on( 'keydown', onKeyDown );
+	</script>
+</body>
+</html>
